@@ -17,6 +17,12 @@ def connect(read_only: bool = True):
     path.parent.mkdir(parents=True, exist_ok=True)
     return duckdb.connect(str(path))
 
+def close_read_connection():
+    """Release the cached read-only connection before a database write."""
+    if _read_connection.cache_info().currsize:
+        _read_connection().close()
+        _read_connection.cache_clear()
+
 def schema_description() -> dict:
     con = connect()
     tables = {}

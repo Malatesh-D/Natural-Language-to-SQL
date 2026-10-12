@@ -30,6 +30,18 @@ with st.sidebar:
     except RuntimeError as exc:
         st.error(str(exc)); health = None
     st.markdown("### Your data")
+    with st.expander("Upload a dataset"):
+        upload = st.file_uploader("CSV or Excel file", type=["csv", "xlsx", "xls"], help="Files up to 25 MB. Excel imports the first worksheet.")
+        dataset_name = st.text_input("Table name (optional)", placeholder="Use the filename")
+        if st.button("Add to database", disabled=upload is None, use_container_width=True):
+            try:
+                payload = {"file": (upload.name, upload.getvalue(), upload.type or "application/octet-stream")}
+                form = {"table_name": dataset_name} if dataset_name.strip() else {}
+                added = api_call("POST", "/datasets/upload", files=payload, data=form)
+                st.success(f"Added **{added['table']}** with {added['rows']:,} rows and {added['columns']} columns.")
+                st.rerun()
+            except RuntimeError as exc:
+                st.error(str(exc))
     if health:
         try:
             schema = api_call("GET", "/schema")

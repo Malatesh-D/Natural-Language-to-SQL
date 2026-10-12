@@ -7,7 +7,7 @@ QueryPilot AI turns plain-English business questions into DuckDB SQL, checks eac
 - FastAPI service with schema, health, query, SQL editor, and per-session history endpoints.
 - Gemini SQL generation using Google's current `google-genai` SDK (`genai.Client` and `models.generate_content`).
 - SQLGlot parsing, single-SELECT policy, table allowlist, catalog/function guards, planner-based column resolution, and DuckDB read-only execution.
-- Repeatable sample database initialization, conversational context, capped results, CSV export, and Plotly chart recommendations.
+- CSV and Excel dataset uploads into queryable DuckDB tables, repeatable sample database initialization, conversational context, capped results, CSV export, and Plotly chart recommendations.
 - Tests mock Gemini and do not require a live API key.
 
 ## Architecture
@@ -100,6 +100,7 @@ The dashboard is on port 8501 and API on port 8000. The named Docker volume pers
 | --- | --- | --- |
 | GET | `/health` | Database readiness |
 | GET | `/schema` | Tables, columns, relationships, business definitions |
+| POST | `/datasets/upload` | Import a CSV or Excel file as a table (multipart fields: `file`, optional `table_name`; 25 MB limit) |
 | POST | `/query` | Generate, validate, and execute a question (`{"question":"Show revenue by category"}`) |
 | POST | `/query/sql` | Validate and execute user SQL (`{"sql":"SELECT city FROM customers"}`) |
 | GET | `/history` | Current session history |
@@ -118,7 +119,7 @@ The specific SQL depends on the configured Gemini model. The database has `custo
 
 ## Security design
 
-The generated query is treated as untrusted. SQLGlot requires one SELECT statement, rejects unavailable tables and catalog-qualified access, and blocks known external data functions. DuckDB's planner resolves identifiers, and execution uses a read-only database connection. Results are capped by `MAX_RESULT_ROWS`. Natural-language requests never pass directly to SQL execution. The current demo does not provide user authentication; do not expose it publicly without adding authentication and network protections.
+The generated query is treated as untrusted. SQLGlot requires one SELECT statement, rejects unavailable tables and catalog-qualified access, and blocks known external data functions. DuckDB's planner resolves identifiers, and query execution uses a read-only database connection. Dataset uploads are size limited and create a new table; an existing table name is rejected to protect existing data. Results are capped by `MAX_RESULT_ROWS`. Natural-language requests never pass directly to SQL execution. The current demo does not provide user authentication; do not expose it publicly without adding authentication and network protections.
 
 ## Tests
 
